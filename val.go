@@ -2,8 +2,10 @@ package slx
 
 import (
 	"go.starlark.net/starlark"
+	sltime "go.starlark.net/lib/time"
 	"reflect"
 	"fmt"
+	"time"
 )
 
 func toValue(v interface{}) starlark.Value {
@@ -28,6 +30,10 @@ func toValue(v interface{}) starlark.Value {
 		return starlark.Bytes(vv)
 	case bool:
 		return starlark.Bool(vv)
+	case time.Time:
+		return sltime.Time(vv)
+	case time.Duration:
+		return sltime.Duration(vv)
 	case starlark.Value:
 		return vv
 	default:
@@ -158,6 +164,10 @@ func fromValue(v starlark.Value) (interface{}) {
 	case "builtin_function_or_method":
 		f := v.(*starlark.Builtin)
 		return f
+	case "time.time":
+		return time.Time(v.(sltime.Time))
+	case "time.duration":
+		return time.Duration(v.(sltime.Duration))
 	default:
 		return nil
 	}
