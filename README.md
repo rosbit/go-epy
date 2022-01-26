@@ -1,6 +1,6 @@
 # go-starlark-x
 
-[Starlark in Go](https://github.com/google/starlark-go) is an interpreter for Starlark, implemented in Go. 
+[Starlark in Go](https://github.com/google/starlark-go) is an interpreter for Starlark, a python-like language implemented in Go. 
 
 This package is intended to extend the go-starlark to make `golang functions and struct instances`
 as Starlark `built-in functions and modules` very easily, so calling golang functions or modules from
