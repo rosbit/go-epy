@@ -200,7 +200,7 @@ func makeValue(t reflect.Type) reflect.Value {
 			reflect.Int8,reflect.Int16,reflect.Int32,reflect.Int64,
 			reflect.Uint8,reflect.Uint16,reflect.Uint32,reflect.Uint64,
 			reflect.Float32,reflect.Float64,reflect.String,
-			reflect.Array, reflect.Map, reflect.Struct:
+			reflect.Array,reflect.Map,reflect.Struct,reflect.Interface:
 		return reflect.Indirect(reflect.New(t))
 	case reflect.Ptr:
 		e := makeValue(t.Elem())

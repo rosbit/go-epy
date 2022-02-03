@@ -19,8 +19,10 @@ to install.
 ```go
 package main
 
-import "fmt"
-import "github.com/rosbit/go-starlark-x"
+import (
+  "github.com/rosbit/go-starlark-x"
+  "fmt"
+)
 
 func main() {
   ctx := slx.NewStarlark()
@@ -44,8 +46,10 @@ one can call the Starlark function slAdd() in Go code like the following:
 ```go
 package main
 
-import "fmt"
-import "github.com/rosbit/go-starlark-x"
+import (
+  "github.com/rosbit/go-starlark-x"
+  "fmt"
+)
 
 var slAdd func(int, int)int
 
@@ -102,8 +106,8 @@ This package provides a function `SetModule` which will convert a Go struct into
 a Starlark module. There's the example `c.star`:
 
 ```python
-r = m.IncAge(10)
-print(r)
+m.IncAge(10)
+print(m)
 
 print('m.name', m.name)
 print('m.age', m.age)
@@ -165,12 +169,58 @@ func main() {
      return
   }
 
-  res, err := ctx.GetGlobals("global_var_name") // get the value of var global_var_name
+  res, err := ctx.GetGlobals("a") // get the value of var named "a"
   if err != nil {
      fmt.Printf("%v\n", err)
      return
   }
   fmt.Printf("res:", res)
+}
+```
+
+### Wrap Go functions as Starlark module
+
+This package provides a function `CreateModule` which will create a Starlark module containing
+go functions as module methods. There's the example `d.star`:
+
+```python
+a = tm.newA("rosbit", 10)
+a.IncAge(10)
+print(a)
+
+tm.printf('m.name: %s\n', a.name)
+tm.printf('m.age: %d\n', a.age)
+```
+
+The Go code is like this:
+
+```go
+package main
+
+import (
+  "github.com/rosbit/go-starlark-x"
+  "fmt"
+)
+
+type A struct {
+   Name string
+   Age int
+}
+func (m *A) IncAge(a int) {
+   m.Age += a
+}
+func newA(name string, age int) *A {
+   return &A{Name: name, Age: age}
+}
+
+func main() {
+  ctx := js.NewStarlark()
+  ctx.CreateModule("tm", map[string]interface{}{
+     "newA": newA,
+     "printf": fmt.Printf,
+  })
+
+  ctx.EvalFile("d.star", nil)
 }
 ```
 

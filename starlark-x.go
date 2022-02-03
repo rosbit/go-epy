@@ -139,9 +139,29 @@ func (slw *XStarlark) SetModule(modName string, structVarPtr interface{}) (err e
 	v := reflect.ValueOf(structVarPtr)
 	if v.Kind() == reflect.Struct || (v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Struct) {
 		starlark.Universe[modName] = bindGoStruct(modName, v)
-		return nil
+		return
 	}
 	err = fmt.Errorf("structVarPtr must be struct or pointer of strcut")
+	return
+}
+
+// wrapper some `name2FuncVarPtr` to a module named `modName`
+// @param name2FuncVarPtr must be string => func
+func (slw *XStarlark) CreateModule(modName string, name2FuncVarPtr map[string]interface{}) (err error) {
+	if len(modName) == 0 {
+		err = fmt.Errorf("modName expected")
+		return
+	}
+	if len(name2FuncVarPtr) == 0 {
+		err = fmt.Errorf("name2FuncVarPtr expected")
+		return
+	}
+	mod, e := wrapModule(modName, name2FuncVarPtr)
+	if e != nil {
+		err = e
+		return
+	}
+	starlark.Universe[modName] = mod
 	return
 }
 
