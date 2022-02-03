@@ -1,11 +1,12 @@
 package slx
 
 import (
-	"go.starlark.net/starlark"
 	sltime "go.starlark.net/lib/time"
+	"go.starlark.net/starlark"
 	"reflect"
 	"fmt"
 	"time"
+	"math/big"
 )
 
 func toValue(v interface{}) starlark.Value {
@@ -14,14 +15,12 @@ func toValue(v interface{}) starlark.Value {
 	}
 
 	switch vv := v.(type) {
-	case int:
-		return starlark.MakeInt(vv)
-	case uint:
-		return starlark.MakeUint(vv)
-	case int8,int16,int32,int64:
+	case int,int8,int16,int32,int64:
 		return starlark.MakeInt64(reflect.ValueOf(v).Int())
-	case uint8,uint16,uint32,uint64:
+	case uint,uint8,uint16,uint32,uint64:
 		return starlark.MakeUint64(reflect.ValueOf(v).Uint())
+	case *big.Int:
+		return starlark.MakeBigInt(vv)
 	case float32,float64:
 		return starlark.Float(reflect.ValueOf(v).Float())
 	case string:
@@ -116,7 +115,7 @@ func fromValue(v starlark.Value) (interface{}) {
 		if u64, ok := i.Uint64(); ok {
 			return u64
 		}
-		return 0
+		return i.BigInt()
 	case "float":
 		return float64(v.(starlark.Float))
 	case "string":
