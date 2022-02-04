@@ -7,7 +7,15 @@ import (
 	"strings"
 )
 
-func bindGoStruct(name string, structVar reflect.Value) (goModule *starlarkstruct.Module) {
+type userModule struct {
+	*starlarkstruct.Module
+	originStruct reflect.Value
+}
+func (m *userModule) Type() string {
+	return "user_module"
+}
+
+func bindGoStruct(name string, structVar reflect.Value) (goModule *userModule) {
 	var structE reflect.Value
 	if structVar.Kind() == reflect.Ptr {
 		structE = structVar.Elem()
@@ -38,9 +46,12 @@ func bindGoStruct(name string, structVar reflect.Value) (goModule *starlarkstruc
 		}
 	}
 
-	goModule = &starlarkstruct.Module{
-		Name: name,
-		Members: wrapGoStruct(structVar, structE, structT),
+	goModule = &userModule{
+		Module: &starlarkstruct.Module{
+			Name: name,
+			Members: wrapGoStruct(structVar, structE, structT),
+		},
+		originStruct: structVar,
 	}
 	return
 }

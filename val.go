@@ -167,6 +167,9 @@ func fromValue(v starlark.Value) (interface{}) {
 		return time.Time(v.(sltime.Time))
 	case "time.duration":
 		return time.Duration(v.(sltime.Duration))
+	case "user_module":
+		s := v.(*userModule).originStruct.Interface()
+		return s
 	default:
 		return nil
 	}
@@ -200,11 +203,9 @@ func makeValue(t reflect.Type) reflect.Value {
 			reflect.Int8,reflect.Int16,reflect.Int32,reflect.Int64,
 			reflect.Uint8,reflect.Uint16,reflect.Uint32,reflect.Uint64,
 			reflect.Float32,reflect.Float64,reflect.String,
-			reflect.Array,reflect.Map,reflect.Struct,reflect.Interface:
+			reflect.Array,reflect.Map,reflect.Struct,
+			reflect.Interface,reflect.Ptr,reflect.Func:
 		return reflect.Indirect(reflect.New(t))
-	case reflect.Ptr:
-		e := makeValue(t.Elem())
-		return e.Addr()
 	default:
 		panic("unsupport type")
 	}
