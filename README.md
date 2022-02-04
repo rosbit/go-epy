@@ -14,7 +14,7 @@ The package is fully go-getable, So, just type
 
 to install.
 
-### 1. Evaluate embedding script
+#### 1. Evaluate embedding script
 
 ```go
 package main
@@ -32,7 +32,7 @@ func main() {
 }
 ```
 
-### 2. Go calls Starlark function
+#### 2. Go calls Starlark function
 
 Suppose there's a Starlark file named `a.star` like this:
 
@@ -70,7 +70,7 @@ func main() {
 }
 ```
 
-### 3. Starlark calls Go function
+#### 3. Starlark calls Go function
 
 Starlark calling Go function is also easy. In the Go code, make a golang function
 as Starlark built-in func by calling `MakeBuiltinFunc("funcname", function)`. There's the example:
@@ -100,7 +100,7 @@ r = adder(1, 100)   # the function "adder" is implemented in Go
 print(r)
 ```
 
-### 4. Make Go struct instance as a Starlark module
+#### 4. Make Go struct instance as a Starlark module
 
 This package provides a function `SetModule` which will convert a Go struct instance into
 a Starlark module. There's the example `c.star`, `m` is the module provided by Go code:
@@ -136,7 +136,7 @@ func main() {
 }
 ```
 
-### 5. Set many built-in functions and modules at one time
+#### 5. Set many built-in functions and modules at one time
 
 If there're a lot of functions and modules to be registered, a map could be constructed and put as an
 argument for functions `LoadFile`, `LoadScript`, `EvalFile` or `Eval`.
@@ -181,7 +181,7 @@ func main() {
 }
 ```
 
-### 6. Wrap Go functions as Starlark module
+#### 6. Wrap Go functions as Starlark module
 
 This package also provides a function `CreateModule` which will create a Starlark module integrating any
 Go functions as module methods. There's the example `d.star` which will use module `tm` provided by Go code:
@@ -191,8 +191,8 @@ a = tm.newA("rosbit", 10)
 a.IncAge(10)
 print(a)
 
-tm.printf('m.name: %s\n', a.name)
-tm.printf('m.age: %d\n', a.age)
+tm.printf('a.name: %s\n', a.name)
+tm.printf('a.age: %d\n', a.age)
 ```
 
 The Go code is like this:
