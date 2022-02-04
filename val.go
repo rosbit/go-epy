@@ -1,4 +1,4 @@
-package slx
+package epy
 
 import (
 	sltime "go.starlark.net/lib/time"

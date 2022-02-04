@@ -1,4 +1,4 @@
-package slx
+package epy
 
 import (
 	"go.starlark.net/starlark"
@@ -15,9 +15,9 @@ func init() {
 	starlark.Universe["math"] = math.Module
 }
 
-func NewStarlark() *XStarlark {
+func New() *XStarlark {
 	return &XStarlark{
-		thread: &starlark.Thread{Name:"starlark-x"},
+		thread: &starlark.Thread{Name:"e-python"},
 	}
 }
 

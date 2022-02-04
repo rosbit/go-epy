@@ -1,31 +1,32 @@
-# go-starlark-x
+# go-epy, an enmbedding Python
 
-[Starlark in Go](https://github.com/google/starlark-go), a python-like script language, is an interpreter for Starlark implemented in pure Go. 
+[Starlark in Go](https://github.com/google/starlark-go), a Python-like script language, is an interpreter for Starlark implemented in pure Go. 
 
-`go-starlark-x` is a package extending the go-starlark and make it a **pragmatic embedding** language.
-With some helper functions proviced by `go-starlark-x`, calling Golang functions or modules from Starlark,
-or calling Starlark function from Golang are both very simple.
+`go-epy` is a package extending the starlark-go and make it a **pragmatic embedding** language.
+With some helper functions proviced by `go-epy`, calling Golang functions or modules from Starlark, 
+or calling Starlark function from Golang are both very simple. So, with the help of `go-epy`, starlark-go
+can be looked as **an embedding Python**.
 
 ### Usage
 
 The package is fully go-getable, so, just type
 
-  `go get github.com/rosbit/go-starlark-x`
+  `go get github.com/rosbit/go-epy`
 
 to install.
 
-#### 1. Evaluate embedding script
+#### 1. Evaluate expressions
 
 ```go
 package main
 
 import (
-  "github.com/rosbit/go-starlark-x"
+  "github.com/rosbit/go-epy"
   "fmt"
 )
 
 func main() {
-  ctx := slx.NewStarlark()
+  ctx := epy.New()
 
   res, _ := ctx.Eval("1 + 2", nil)
   fmt.Println("result is:", res)
@@ -34,7 +35,7 @@ func main() {
 
 #### 2. Go calls Starlark function
 
-Suppose there's a Starlark file named `a.star` like this:
+Suppose there's a Starlark file named `a.py` like this:
 
 ```python
 def add(a, b):
@@ -47,15 +48,15 @@ one can call the Starlark function `add()` in Go code like the following:
 package main
 
 import (
-  "github.com/rosbit/go-starlark-x"
+  "github.com/rosbit/go-epy"
   "fmt"
 )
 
 var add func(int, int)int
 
 func main() {
-  ctx := slx.NewStarlark()
-  if err := ctx.LoadFile("a.star", nil); err != nil {
+  ctx := epy.New()
+  if err := ctx.LoadFile("a.py", nil); err != nil {
      fmt.Printf("%v\n", err)
      return
   }
@@ -78,7 +79,7 @@ as Starlark built-in function by calling `MakeBuiltinFunc("funcname", function)`
 ```go
 package main
 
-import "github.com/rosbit/go-starlark-x"
+import "github.com/rosbit/go-epy"
 
 // function to be called by Starlark
 func adder(a1 float64, a2 float64) float64 {
@@ -86,14 +87,14 @@ func adder(a1 float64, a2 float64) float64 {
 }
 
 func main() {
-  ctx := slx.NewStarlark()
+  ctx := epy.New()
 
   ctx.MakeBuiltinFunc("adder", adder)
-  ctx.EvalFile("b.star", nil)  // b.star containing code calling "adder"
+  ctx.EvalFile("b.py", nil)  // b.py containing code calling "adder"
 }
 ```
 
-In Starlark code, one can call the registered function directly. There's the example `b.star`.
+In Starlark code, one can call the registered function directly. There's the example `b.py`.
 
 ```python
 r = adder(1, 100)   # the function "adder" is implemented in Go
@@ -103,7 +104,7 @@ print(r)
 #### 4. Make Go struct instance as a Starlark module
 
 This package provides a function `SetModule` which will convert a Go struct instance into
-a Starlark module. There's the example `c.star`, `m` is the module provided by Go code:
+a Starlark module. There's the example `c.py`, `m` is the module provided by Go code:
 
 ```python
 m.incAge(10)
@@ -118,7 +119,7 @@ The Go code is like this:
 ```go
 package main
 
-import "github.com/rosbit/go-starlark-x"
+import "github.com/rosbit/go-epy"
 
 type M struct {
    Name string
@@ -129,10 +130,10 @@ func (m *M) IncAge(a int) {
 }
 
 func main() {
-  ctx := js.NewStarlark()
+  ctx := epy.New()
   ctx.SetModule("m", &M{Name:"rosbit", Age: 1}) // "m" is the module name
 
-  ctx.EvalFile("c.star", nil)
+  ctx.EvalFile("c.py", nil)
 }
 ```
 
@@ -144,7 +145,7 @@ argument for functions `LoadFile`, `LoadScript`, `EvalFile` or `Eval`.
 ```go
 package main
 
-import "github.com/rosbit/go-starlark-x"
+import "github.com/rosbit/go-epy"
 import "fmt"
 
 type M struct {
@@ -166,8 +167,8 @@ func main() {
      "a": []int{1,2,3}              // to Starlark array
   }
 
-  ctx := js.NewStarlark()
-  if err := ctx.LoadFile("file.star", vars); err != nil {
+  ctx := epy.New()
+  if err := ctx.LoadFile("file.py", vars); err != nil {
      fmt.Printf("%v\n", err)
      return
   }
@@ -184,7 +185,7 @@ func main() {
 #### 6. Wrap Go functions as Starlark module
 
 This package also provides a function `CreateModule` which will create a Starlark module integrating any
-Go functions as module methods. There's the example `d.star` which will use module `tm` provided by Go code:
+Go functions as module methods. There's the example `d.py` which will use module `tm` provided by Go code:
 
 ```python
 a = tm.newA("rosbit", 10)
@@ -201,7 +202,7 @@ The Go code is like this:
 package main
 
 import (
-  "github.com/rosbit/go-starlark-x"
+  "github.com/rosbit/go-epy"
   "fmt"
 )
 
@@ -217,13 +218,13 @@ func newA(name string, age int) *A {
 }
 
 func main() {
-  ctx := js.NewStarlark()
+  ctx := epy.New()
   ctx.CreateModule("tm", map[string]interface{}{ // module name is "tm"
      "newA": newA,            // make user defined function as module method named "tm.newA"
      "printf": fmt.Printf,    // make function in a standard package named "tm.printf"
   })
 
-  ctx.EvalFile("d.star", nil)
+  ctx.EvalFile("d.py", nil)
 }
 ```
 
