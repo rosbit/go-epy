@@ -1,14 +1,14 @@
 # go-starlark-x
 
-[Starlark in Go](https://github.com/google/starlark-go), a python-like script langusage, is an interpreter for Starlark implemented in Go. 
+[Starlark in Go](https://github.com/google/starlark-go), a python-like script language, is an interpreter for Starlark implemented in pure Go. 
 
-`go-starlark-x` is  a package intending to extend the go-starlark and make it a **pragmatic embedding** language.
-With some helper functions proviced by `go-starlark-x`, calling Golang functions or modules from Starlark, or calling Starlark function from Golang
-are both very simple.
+`go-starlark-x` is a package extending the go-starlark and make it a **pragmatic embedding** language.
+With some helper functions proviced by `go-starlark-x`, calling Golang functions or modules from Starlark,
+or calling Starlark function from Golang are both very simple.
 
 ### Usage
 
-The package is fully go-getable, So, just type
+The package is fully go-getable, so, just type
 
   `go get github.com/rosbit/go-starlark-x`
 
@@ -72,8 +72,8 @@ func main() {
 
 #### 3. Starlark calls Go function
 
-Starlark calling Go function is also easy. In the Go code, make a golang function
-as Starlark built-in func by calling `MakeBuiltinFunc("funcname", function)`. There's the example:
+Starlark calling Go function is also easy. In the Go code, make a Golang function
+as Starlark built-in function by calling `MakeBuiltinFunc("funcname", function)`. There's the example:
 
 ```go
 package main
@@ -106,7 +106,7 @@ This package provides a function `SetModule` which will convert a Go struct inst
 a Starlark module. There's the example `c.star`, `m` is the module provided by Go code:
 
 ```python
-m.IncAge(10)
+m.incAge(10)
 print(m)
 
 print('m.name', m.name)
@@ -188,7 +188,7 @@ Go functions as module methods. There's the example `d.star` which will use modu
 
 ```python
 a = tm.newA("rosbit", 10)
-a.IncAge(10)
+a.incAge(10)
 print(a)
 
 tm.printf('a.name: %s\n', a.name)
