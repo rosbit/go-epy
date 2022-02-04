@@ -1,12 +1,10 @@
 # go-starlark-x
 
-[Starlark in Go](https://github.com/google/starlark-go) is an interpreter for Starlark, a python-like language implemented in Go. 
+[Starlark in Go](https://github.com/google/starlark-go), a python-like script langusage, is an interpreter for Starlark implemented in Go. 
 
-This package is intended to extend the go-starlark to make `golang functions and struct instances`
-as Starlark `built-in functions and modules` very easily, so calling golang functions or modules from
-Starlark is very simple.
-
-This package also provides a helper to bind a golang function with a Starlark function, so that calling Starlark function is simple, too.
+`go-starlark-x` is  a package intending to extend the go-starlark and make it a **pragmatic embedding** language.
+With some helper functions proviced by `go-starlark-x`, calling Golang functions or modules from Starlark, or calling Starlark function from Golang
+are both very simple.
 
 ### Usage
 
@@ -15,6 +13,8 @@ The package is fully go-getable, So, just type
   `go get github.com/rosbit/go-starlark-x`
 
 to install.
+
+### 1. Evaluate embedding script
 
 ```go
 package main
@@ -32,16 +32,16 @@ func main() {
 }
 ```
 
-### Go calls Starlark function
+### 2. Go calls Starlark function
 
 Suppose there's a Starlark file named `a.star` like this:
 
 ```python
-def slAdd(a, b):
+def add(a, b):
     return a+b
 ```
 
-one can call the Starlark function slAdd() in Go code like the following:
+one can call the Starlark function `add()` in Go code like the following:
 
 ```go
 package main
@@ -51,7 +51,7 @@ import (
   "fmt"
 )
 
-var slAdd func(int, int)int
+var add func(int, int)int
 
 func main() {
   ctx := slx.NewStarlark()
@@ -60,17 +60,17 @@ func main() {
      return
   }
 
-  if err := ctx.BindFunc("slAdd", &slAdd); err != nil {
+  if err := ctx.BindFunc("add", &add); err != nil {
      fmt.Printf("%v\n", err)
      return
   }
 
-  res := slAdd(1, 2)
+  res := add(1, 2)
   fmt.Println("result is:", res)
 }
 ```
 
-### Starlark calls Go function
+### 3. Starlark calls Go function
 
 Starlark calling Go function is also easy. In the Go code, make a golang function
 as Starlark built-in func by calling `MakeBuiltinFunc("funcname", function)`. There's the example:
@@ -93,17 +93,17 @@ func main() {
 }
 ```
 
-In Starlark code, one can call the registered name directly. There's the example `b.star`.
+In Starlark code, one can call the registered function directly. There's the example `b.star`.
 
 ```python
 r = adder(1, 100)   # the function "adder" is implemented in Go
 print(r)
 ```
 
-### Make Go struct as Starlark module
+### 4. Make Go struct instance as a Starlark module
 
-This package provides a function `SetModule` which will convert a Go struct into
-a Starlark module. There's the example `c.star`:
+This package provides a function `SetModule` which will convert a Go struct instance into
+a Starlark module. There's the example `c.star`, `m` is the module provided by Go code:
 
 ```python
 m.IncAge(10)
@@ -130,13 +130,16 @@ func (m *M) IncAge(a int) {
 
 func main() {
   ctx := js.NewStarlark()
-  ctx.SetModule("m", &M{Name:"rosbit", Age: 1})
+  ctx.SetModule("m", &M{Name:"rosbit", Age: 1}) // "m" is the module name
 
   ctx.EvalFile("c.star", nil)
 }
 ```
 
-### Set built-in functions and modules at one time
+### 5. Set many built-in functions and modules at one time
+
+If there're a lot of functions and modules to be registered, a map could be constructed and put as an
+argument for functions `LoadFile`, `LoadScript`, `EvalFile` or `Eval`.
 
 ```go
 package main
@@ -169,7 +172,7 @@ func main() {
      return
   }
 
-  res, err := ctx.GetGlobals("a") // get the value of var named "a"
+  res, err := ctx.GetGlobal("a") // get the value of var named "a". Any variables in script could be get by GetGlobal
   if err != nil {
      fmt.Printf("%v\n", err)
      return
@@ -178,10 +181,10 @@ func main() {
 }
 ```
 
-### Wrap Go functions as Starlark module
+### 6. Wrap Go functions as Starlark module
 
-This package provides a function `CreateModule` which will create a Starlark module containing
-go functions as module methods. There's the example `d.star`:
+This package also provides a function `CreateModule` which will create a Starlark module integrating any
+Go functions as module methods. There's the example `d.star` which will use module `tm` provided by Go code:
 
 ```python
 a = tm.newA("rosbit", 10)
@@ -215,9 +218,9 @@ func newA(name string, age int) *A {
 
 func main() {
   ctx := js.NewStarlark()
-  ctx.CreateModule("tm", map[string]interface{}{
-     "newA": newA,
-     "printf": fmt.Printf,
+  ctx.CreateModule("tm", map[string]interface{}{ // module name is "tm"
+     "newA": newA,            // make user defined function as module method named "tm.newA"
+     "printf": fmt.Printf,    // make function in a standard package named "tm.printf"
   })
 
   ctx.EvalFile("d.star", nil)
