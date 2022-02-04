@@ -1,4 +1,4 @@
-package slx
+package epy
 
 import (
 	"go.starlark.net/starlark"

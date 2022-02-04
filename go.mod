@@ -1,4 +1,4 @@
-module github.com/rosbit/go-starlark-x
+module github.com/rosbit/go-epy
 
 go 1.17
 
