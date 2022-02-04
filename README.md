@@ -1,10 +1,10 @@
-# go-epy, an enmbedding Python
+# go-epy, an embedding Python
 
 [Starlark in Go](https://github.com/google/starlark-go), a Python-like script language, is an interpreter for Starlark implemented in pure Go. 
 
 `go-epy` is a package extending the starlark-go and make it a **pragmatic embedding** language.
 With some helper functions proviced by `go-epy`, calling Golang functions or modules from Starlark, 
-or calling Starlark function from Golang are both very simple. So, with the help of `go-epy`, starlark-go
+or calling Starlark functions from Golang are both very simple. So, with the help of `go-epy`, starlark-go
 can be looked as **an embedding Python**.
 
 ### Usage
