@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"fmt"
 	"time"
+	"strings"
 	"math/big"
 )
 
@@ -142,7 +143,7 @@ func fromValue(v starlark.Value) (interface{}) {
 		ks := d.Keys()
 		for _, k := range ks {
 			vv, _, _ := d.Get(k)
-			res[k.String()] = fromValue(vv)
+			res[string(k.(starlark.String))] = fromValue(vv)
 		}
 		return res
 	case "set":
@@ -189,7 +190,63 @@ func setValue(dest reflect.Value, val interface{}) error {
 		return nil
 	}
 
+	switch v.Kind() {
+	case reflect.Map:
+		switch dest.Kind() {
+		case reflect.Struct:
+			return map2Struct(dest, v)
+		case reflect.Ptr:
+			if dest.Elem().Kind() == reflect.Struct {
+				return map2Struct(dest.Elem(), v)
+			}
+		default:
+		}
+	case reflect.Slice:
+		if dest.Kind() == reflect.Slice {
+			return copySlice(dest, v)
+		}
+	}
+
 	return fmt.Errorf("cannot convert %s to %s", vt, dt)
+}
+
+func map2Struct(dest reflect.Value, v reflect.Value) error {
+	dt := dest.Type()
+	for i:=0; i<dt.NumField(); i++ {
+		ft := dt.Field(i)
+		fv := dest.Field(i)
+		fn := ft.Name
+		tag := ft.Tag
+		if tv := tag.Get("json"); len(tv) > 0 {
+			fn = tv
+		} else {
+			fn = strings.ToLower(fn[:1]) + fn[1:]
+		}
+		mv := v.MapIndex(reflect.ValueOf(fn))
+		if mv.IsValid() {
+			if err := setValue(fv, mv.Interface()); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func copySlice(dest reflect.Value, v reflect.Value) error {
+	l := v.Len()
+	if l == 0 {
+		dest.SetLen(0)
+		return nil
+	}
+	newDest := reflect.MakeSlice(dest.Type(), l, l)
+	for i:=0; i<l; i++ {
+		if err := setValue(newDest.Index(i), v.Index(i).Interface()); err != nil {
+			return err
+		}
+	}
+	dest.Set(newDest)
+	return nil
 }
 
 func makeValue(t reflect.Type) reflect.Value {
@@ -204,8 +261,13 @@ func makeValue(t reflect.Type) reflect.Value {
 			reflect.Uint8,reflect.Uint16,reflect.Uint32,reflect.Uint64,
 			reflect.Float32,reflect.Float64,reflect.String,
 			reflect.Array,reflect.Map,reflect.Struct,
-			reflect.Interface,reflect.Ptr,reflect.Func:
+			reflect.Interface/*,reflect.Ptr*/,reflect.Func:
 		return reflect.Indirect(reflect.New(t))
+	case reflect.Ptr:
+		el := makeValue(t.Elem())
+		ptr := reflect.Indirect(reflect.New(t))
+		ptr.Set(el.Addr())
+		return ptr
 	default:
 		panic("unsupport type")
 	}

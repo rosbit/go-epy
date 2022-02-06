@@ -47,14 +47,16 @@ func (slw *XStarlark) wrapFunc(fn *starlark.Function, fnType reflect.Type) func(
 						l = n
 					}
 					for i:=0; i<l; i++ {
-						v := reflect.New(fnType.Out(i)).Elem()
+						// v := reflect.New(fnType.Out(i)).Elem()
+						v := makeValue(fnType.Out(i))
 						rv := mRes[i]
 						if err = setValue(v, rv); err == nil {
 							results[i] = v
 						}
 					}
 				} else {
-					v := reflect.New(fnType.Out(0)).Elem()
+					// v := reflect.New(fnType.Out(0)).Elem()
+					v := makeValue(fnType.Out(0))
 					rv := fromValue(res)
 					if err = setValue(v, rv); err == nil {
 						results[0] = v
