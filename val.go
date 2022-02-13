@@ -40,44 +40,9 @@ func toValue(v interface{}) starlark.Value {
 		v2 := reflect.ValueOf(v)
 		switch v2.Kind() {
 		case reflect.Slice, reflect.Array:
-			vt := v2
-			r := make([]starlark.Value, vt.Len())
-			for i:=0; i<vt.Len(); i++ {
-				r[i] = toValue(vt.Index(i).Interface())
-			}
-			return starlark.NewList(r)
+			return &userList{v: v2}
 		case reflect.Map:
-			vm := v2
-			r := starlark.NewDict(vm.Len())
-			iter := vm.MapRange()
-			for iter.Next() {
-				k, v1 := iter.Key(), iter.Value()
-				if k.Kind() == reflect.String {
-					switch {
-					case v1.IsNil():
-						r.SetKey(toValue(k.Interface()), starlark.None)
-						continue
-					case v1.Kind() == reflect.Func:
-						if f, err := bindGoFunc(k.String(), v1.Interface()); err == nil {
-							r.SetKey(toValue(k.Interface()), f)
-						}
-						continue
-					case v1.Kind() == reflect.Struct:
-						r.SetKey(toValue(k.Interface()), bindGoStruct(k.String(), v1))
-						continue
-					case v1.Kind() == reflect.Ptr && v1.Elem().Kind() == reflect.Struct:
-						r.SetKey(toValue(k.Interface()), bindGoStruct(k.String(), v1))
-						continue
-					default:
-						if sv, ok := v1.Interface().(starlark.Value); ok {
-							r.SetKey(toValue(k.Interface()), sv)
-							continue
-						}
-					}
-				}
-				r.SetKey(toValue(k.Interface()), toValue(v1.Interface()))
-			}
-			return r
+			return &userMap{v: v2}
 		case reflect.Struct:
 			return bindGoStruct("", v2)
 		case reflect.Ptr:
@@ -91,6 +56,8 @@ func toValue(v interface{}) starlark.Value {
 				return f
 			}
 			return starlark.None
+		case reflect.Interface:
+			return &userInterface{v: v2}
 		default:
 			return starlark.None
 		}
@@ -169,8 +136,13 @@ func fromValue(v starlark.Value) (interface{}) {
 	case "time.duration":
 		return time.Duration(v.(sltime.Duration))
 	case "user_module":
-		s := v.(*userModule).originStruct.Interface()
-		return s
+		return v.(*userModule).structVar.Interface()
+	case "user_map":
+		return v.(*userMap).v.Interface()
+	case "user_list":
+		return v.(*userList).v.Interface()
+	case "user_interface":
+		return v.(*userInterface).v.Interface()
 	default:
 		return nil
 	}

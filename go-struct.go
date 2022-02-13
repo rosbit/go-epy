@@ -1,18 +1,74 @@
 package epy
 
 import (
-	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/starlark"
 	"reflect"
 	"strings"
+	"fmt"
 )
 
 type userModule struct {
-	*starlarkstruct.Module
-	originStruct reflect.Value
+	modName string
+	structVar reflect.Value
+	structE   reflect.Value
+	structT   reflect.Type
+	attrNames []string
 }
+
 func (m *userModule) Type() string {
 	return "user_module"
+}
+
+func (m *userModule) Attr(name string) (starlark.Value, error) {
+	if len(name) == 0 {
+		return starlark.None, nil
+	}
+	name = upperFirst(name)
+	mV := m.structVar.MethodByName(name)
+	if mV.Kind() != reflect.Invalid {
+		mT := mV.Type()
+		return starlark.NewBuiltin(name, wrapGoFunc(mV, mT)), nil
+	}
+	mV = m.structE.MethodByName(name)
+	if mV.Kind() != reflect.Invalid {
+		mT := mV.Type()
+		return starlark.NewBuiltin(name, wrapGoFunc(mV, mT)), nil
+	}
+	if _, ok := m.structT.FieldByName(name); !ok {
+		return starlark.None, nil
+	}
+	fV := m.structE.FieldByName(name)
+	return toValue(fV.Interface()), nil
+}
+
+func (m *userModule) AttrNames() []string {
+	return m.attrNames
+}
+
+func (m *userModule) SetField(name string, val starlark.Value) error {
+	if len(name) == 0 {
+		return fmt.Errorf("field name expected")
+	}
+	name = upperFirst(name)
+	if _, ok := m.structT.FieldByName(name); !ok {
+		return fmt.Errorf("field %s not found", name)
+	}
+	fV := m.structE.FieldByName(name)
+	return setValue(fV, fromValue(val))
+}
+
+func (m *userModule) Freeze() {}
+
+func (m *userModule) Hash() (uint32, error) {
+	return 0, fmt.Errorf("unhashable: %s", m.Type())
+}
+
+func (m *userModule) String() string {
+	return fmt.Sprintf("<user_module %q>", m.modName)
+}
+
+func (m *userModule) Truth() starlark.Bool {
+	return true
 }
 
 func bindGoStruct(name string, structVar reflect.Value) (goModule *userModule) {
@@ -47,40 +103,39 @@ func bindGoStruct(name string, structVar reflect.Value) (goModule *userModule) {
 	}
 
 	goModule = &userModule{
-		Module: &starlarkstruct.Module{
-			Name: name,
-			Members: wrapGoStruct(structVar, structE, structT),
-		},
-		originStruct: structVar,
+		modName: name,
+		structVar: structVar,
+		structE: structE,
+		structT: structT,
+		attrNames: getAttrNames(structVar, structE, structT),
 	}
 	return
 }
 
-func wrapGoStruct(structVar, structE reflect.Value, structT reflect.Type) starlark.StringDict {
-	r := make(starlark.StringDict)
-	for i:=0; i<structT.NumField(); i++ {
-		strField := structT.Field(i)
-		name := strField.Name
-		name = strings.ToLower(name[:1]) + name[1:]
-		fv := structE.Field(i)
-		r[name] = toValue(fv.Interface())
+func lowerFirst(name string) string {
+	return strings.ToLower(name[:1]) + name[1:]
+}
+func upperFirst(name string) string {
+	return strings.ToUpper(name[:1]) + name[1:]
+}
+
+func getAttrNames(structVar, structE reflect.Value, structT reflect.Type) []string {
+	count := structT.NumField() + structVar.NumMethod() + structE.NumMethod()
+	names := make([]string, count)
+	i := 0
+	for j:=0; j<structT.NumField(); j,i = j+1,i+1 {
+		name := lowerFirst(structT.Field(j).Name)
+		names[i] = name
 	}
-
-	// receiver is the struct
-	bindGoMethod(structE, structT, r)
-
-	// reciver is the pointer of struct
+	for j:=0; j<structE.NumMethod(); j,i = j+1,i+1 {
+		name := lowerFirst(structT.Method(j).Name)
+		names[i] = name
+	}
 	t := structVar.Type()
-	bindGoMethod(structVar, t, r)
-	return r
+	for j:=0; j<structVar.NumMethod(); j,i = j+1,i+1 {
+		name := lowerFirst(t.Method(j).Name)
+		names[i] = name
+	}
+	return names
 }
 
-func bindGoMethod(structV reflect.Value, structT reflect.Type, r starlark.StringDict) {
-	for i := 0; i<structV.NumMethod(); i+=1 {
-		m := structT.Method(i)
-		name := strings.ToLower(m.Name[:1]) + m.Name[1:]
-		mV := structV.Method(i)
-		mT := mV.Type()
-		r[name] = starlark.NewBuiltin(name, wrapGoFunc(mV, mT))
-	}
-}

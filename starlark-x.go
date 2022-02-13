@@ -22,7 +22,7 @@ func New() *XStarlark {
 }
 
 func (slw *XStarlark) LoadFile(path string, vars map[string]interface{}) (err error) {
-	globals, err := starlark.ExecFile(slw.thread, path, nil, convertEnv(vars))
+	globals, err := starlark.ExecFile(slw.thread, path, nil, convertMap(vars))
 	if err != nil {
 			return err
 	}
@@ -31,7 +31,7 @@ func (slw *XStarlark) LoadFile(path string, vars map[string]interface{}) (err er
 }
 
 func (slw *XStarlark) LoadScript(script string, vars map[string]interface{}) (err error) {
-	globals, err := starlark.ExecFile(slw.thread, "load-script.star", script, convertEnv(vars))
+	globals, err := starlark.ExecFile(slw.thread, "load-script.star", script, convertMap(vars))
 	if err != nil {
 			return err
 	}
@@ -50,7 +50,7 @@ func (slw *XStarlark) GetGlobal(name string) (res interface{}, err error) {
 }
 
 func (slw *XStarlark) EvalFile(path string, env map[string]interface{}) (res interface{}, err error) {
-	v, e := starlark.Eval(slw.thread, path, nil, convertEnv(env))
+	v, e := starlark.Eval(slw.thread, path, nil, convertMap(env))
 	if e != nil  {
 		err = e
 		return
@@ -60,7 +60,7 @@ func (slw *XStarlark) EvalFile(path string, env map[string]interface{}) (res int
 }
 
 func (slw *XStarlark) Eval(script string, env map[string]interface{}) (res interface{}, err error) {
-	v, e := starlark.Eval(slw.thread, "eval-script", script, convertEnv(env))
+	v, e := starlark.Eval(slw.thread, "eval-script", script, convertMap(env))
 	if e != nil  {
 		err = e
 		return
@@ -165,7 +165,7 @@ func (slw *XStarlark) CreateModule(modName string, name2FuncVarPtr map[string]in
 	return
 }
 
-func convertEnv(vars map[string]interface{}) (starlark.StringDict) {
+func convertMap(vars map[string]interface{}) (starlark.StringDict) {
 	if len(vars) == 0 {
 		return nil
 	}
