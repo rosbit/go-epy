@@ -77,63 +77,32 @@ func (m *userMap) Hash() (uint32, error) {
 	return 0, fmt.Errorf("unhashable %s", m.Type())
 }
 
-func (m *userMap) Clear() (err error) {
-	if err = m.canModify(); err != nil {
-		return
-	}
-	for _, k := range m.v.MapKeys() {
-		m.v.SetMapIndex(k, reflect.Value{})
-	}
-	return
-}
-
-func (m *userMap) Delete(k starlark.Value) (v starlark.Value, found bool, err error) {
-	if err = m.canModify(); err != nil {
-		return
-	}
-	key := makeValue(m.v.Type().Key())
-	if err = setValue(key, fromValue(k)); err != nil {
-		return
-	}
-	val := m.v.MapIndex(key)
-	if val.Kind() == reflect.Invalid {
-		v = starlark.None
-		return
-	}
-	v, found = toValue(val.Interface()), true
-	m.v.SetMapIndex(key, reflect.Value{})
-	return
-}
-
-func (m *userMap) Items() []starlark.Tuple {
-	count := m.v.Len()
-	tuples := make([]starlark.Tuple, count)
-	i := 0
-	it := m.v.MapRange()
-	for it.Next() {
-		tuple := make(starlark.Tuple, 2)
-		tuple[0] = toValue(it.Key().Interface())
-		tuple[1] = toValue(it.Value().Interface())
-		tuples[i] = tuple
-		i += 1
-	}
-	return tuples
-}
-
-func (m *userMap) Keys() []starlark.Value {
-	count := m.v.Len()
-	keys := make([]starlark.Value, count)
-	i := 0
-	it := m.v.MapRange()
-	for it.Next() {
-		keys[i] = toValue(it.Key().Interface())
-		i += 1
-	}
-	return keys
-}
-
 func (m *userMap) Len() int {
 	return m.v.Len()
+}
+
+func (m *userMap) get(k interface{}, def ...interface{}) interface{} {
+	key := reflect.ValueOf(k)
+	val := m.v.MapIndex(key)
+	if val.Kind() == reflect.Invalid {
+		if len(def) > 0 {
+			return def[0]
+		}
+		return nil
+	}
+	return val.Interface()
+}
+
+func (m *userMap) Attr(name string) (val starlark.Value, err error) {
+	if name != "get" {
+		return starlark.None, nil
+	}
+	val, err = bindGoFunc(name, m.get)
+	return
+}
+
+func (m *userMap) AttrNames() []string {
+	return []string{"get"}
 }
 
 func (m *userMap) Iterate() starlark.Iterator {
