@@ -93,16 +93,73 @@ func (m *userMap) get(k interface{}, def ...interface{}) interface{} {
 	return val.Interface()
 }
 
-func (m *userMap) Attr(name string) (val starlark.Value, err error) {
-	if name != "get" {
-		return starlark.None, nil
+func (m *userMap) keys() []interface{} {
+	l := m.v.Len()
+	if l == 0 {
+		return nil
 	}
-	val, err = bindGoFunc(name, m.get)
+	res := make([]interface{}, l)
+	i := 0
+	it := m.v.MapRange()
+	for it.Next() {
+		k := it.Key()
+		res[i] = k.Interface()
+		i += 1
+	}
+	return res
+}
+
+func (m *userMap) items() ([]starlark.Tuple) {
+	l := m.v.Len()
+	if l == 0 {
+		return nil
+	}
+	res := make([]starlark.Tuple, l)
+	i := 0
+	it := m.v.MapRange()
+	for it.Next() {
+		t := make(starlark.Tuple, 2)
+		k := it.Key()
+		v := it.Value()
+		t[0] = toValue(k.Interface())
+		t[1] = toValue(v.Interface())
+		res[i] = t
+		i += 1
+	}
+	return res
+}
+
+func (m *userMap) Attr(name string) (val starlark.Value, err error) {
+	switch name {
+	default:
+		if m.v.Len() == 0 {
+			val = starlark.None
+			break
+		}
+		kt := m.v.Type().Key()
+		if kt.Kind() != reflect.String {
+			val = starlark.None
+			break
+		}
+		key := reflect.ValueOf(name)
+		v := m.v.MapIndex(key)
+		if v.Kind() == reflect.Invalid {
+			val = starlark.None
+		} else {
+			val = toValue(v.Interface())
+		}
+	case "get":
+		val, err = bindGoFunc(name, m.get)
+	case "items":
+		val, err = bindGoFunc(name, m.items)
+	case "keys":
+		val, err = bindGoFunc(name, m.keys)
+	}
 	return
 }
 
 func (m *userMap) AttrNames() []string {
-	return []string{"get"}
+	return []string{"get", "items", "keys"}
 }
 
 func (m *userMap) Iterate() starlark.Iterator {
