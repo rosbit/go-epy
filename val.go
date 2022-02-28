@@ -106,11 +106,11 @@ func fromValue(v starlark.Value) (interface{}) {
 		return res
 	case "dict":
 		d := v.(*starlark.Dict)
-		res := make(map[string]interface{})
+		res := make(map[interface{}]interface{})
 		ks := d.Keys()
 		for _, k := range ks {
 			vv, _, _ := d.Get(k)
-			res[string(k.(starlark.String))] = fromValue(vv)
+			res[fromValue(k)] = fromValue(vv)
 		}
 		return res
 	case "set":
@@ -171,6 +171,8 @@ func setValue(dest reflect.Value, val interface{}) error {
 			if dest.Elem().Kind() == reflect.Struct {
 				return map2Struct(dest.Elem(), v)
 			}
+		case reflect.Map:
+			return map2Map(dest, v)
 		default:
 		}
 	case reflect.Slice:
@@ -205,6 +207,31 @@ func map2Struct(dest reflect.Value, v reflect.Value) error {
 	return nil
 }
 
+func map2Map(dest reflect.Value, v reflect.Value) error {
+	dt := dest.Type()
+	kt := dt.Key()
+	et := dt.Elem()
+
+	it := v.MapRange()
+	for it.Next() {
+		vk := it.Key()
+		dk := makeValue(kt)
+		if err := setValue(dk, vk.Interface()); err != nil {
+			return err
+		}
+
+		vv := it.Value()
+		dv := makeValue(et)
+		if err := setValue(dv, vv.Interface()); err != nil {
+			return err
+		}
+
+		dest.SetMapIndex(dk, dv)
+	}
+
+	return nil
+}
+
 func copySlice(dest reflect.Value, v reflect.Value) error {
 	l := v.Len()
 	if l == 0 {
@@ -232,9 +259,11 @@ func makeValue(t reflect.Type) reflect.Value {
 			reflect.Int8,reflect.Int16,reflect.Int32,reflect.Int64,
 			reflect.Uint8,reflect.Uint16,reflect.Uint32,reflect.Uint64,
 			reflect.Float32,reflect.Float64,reflect.String,
-			reflect.Array,reflect.Map,reflect.Struct,
+			reflect.Array/*,reflect.Map*/,reflect.Struct,
 			reflect.Interface/*,reflect.Ptr*/,reflect.Func:
 		return reflect.Indirect(reflect.New(t))
+	case reflect.Map:
+		return reflect.MakeMap(t)
 	case reflect.Ptr:
 		el := makeValue(t.Elem())
 		ptr := reflect.Indirect(reflect.New(t))
