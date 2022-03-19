@@ -79,6 +79,34 @@ func (l *userList) Len() int {
 	return l.v.Len()
 }
 
+/*
+func (l *userList) append(v interface{}) (err error) {
+	if err = l.canModify(); err != nil {
+		return
+	}
+	val := makeValue(l.v.Type().Elem())
+	if err = setValue(val, v); err != nil {
+		return
+	}
+	l.v = reflect.Append(l.v, val)
+	return
+}
+
+func (l *userList) Attr(name string) (val starlark.Value, err error) {
+	switch name {
+	default:
+		val = starlark.None
+	case "append":
+		val, err = bindGoFunc(name, l.append)
+	}
+
+	return
+}
+
+func (l *userList) AttrNames() []string {
+	return []string{"append"}
+}*/
+
 func (l *userList) Iterate() starlark.Iterator {
 	l.iterCount++
 	return &listIter{l: l}

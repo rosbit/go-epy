@@ -118,6 +118,15 @@ func (slw *XStarlark) BindFunc(funcName string, funcVarPtr interface{}) (err err
 	return
 }
 
+func (slw *XStarlark) BindFuncs(funcName2FuncVarPtr map[string]interface{}) (err error) {
+	for funcName, funcVarPtr := range funcName2FuncVarPtr {
+		if err = slw.BindFunc(funcName, funcVarPtr); err != nil {
+			return
+		}
+	}
+	return
+}
+
 // make a golang func as a built-in Starlark function, so the function can be called in Starlark script.
 func (slw *XStarlark) MakeBuiltinFunc(funcName string, funcVar interface{}) (err error) {
 	goFunc, e := bindGoFunc(funcName, funcVar)
