@@ -149,9 +149,13 @@ func fromValue(v starlark.Value) (interface{}) {
 }
 
 func setValue(dest reflect.Value, val interface{}) error {
+	dt := dest.Type()
+	if val == nil {
+		dest.Set(reflect.Zero(dt))
+		return nil
+	}
 	v := reflect.ValueOf(val)
 	vt := reflect.TypeOf(val)
-	dt := dest.Type()
 	if vt.AssignableTo(dt) {
 		dest.Set(v)
 		return nil
