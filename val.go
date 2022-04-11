@@ -106,11 +106,31 @@ func fromValue(v starlark.Value) (interface{}) {
 		return res
 	case "dict":
 		d := v.(*starlark.Dict)
-		res := make(map[interface{}]interface{})
+		var res map[interface{}]interface{}
+		res2 := make(map[string]interface{})
+		allKeyString := true
+
 		ks := d.Keys()
 		for _, k := range ks {
 			vv, _, _ := d.Get(k)
-			res[fromValue(k)] = fromValue(vv)
+			key := fromValue(k)
+			if allKeyString {
+				if strKey, ok := key.(string); ok {
+					res2[strKey] = fromValue(vv)
+					continue
+				}
+
+				allKeyString = false
+				res = make(map[interface{}]interface{})
+				for sk, sv := range res2 {
+					res[sk] = sv
+				}
+			}
+			res[key] = fromValue(vv)
+		}
+
+		if allKeyString {
+			return res2
 		}
 		return res
 	case "set":
@@ -156,6 +176,13 @@ func setValue(dest reflect.Value, val interface{}) error {
 		}
 		return nil
 	}
+	if dt.Kind() == reflect.Ptr {
+		et := dt.Elem()
+		ev := makeValue(et)
+		setValue(ev, val)
+		dest.Set(ev.Addr())
+		return nil
+	}
 	v := reflect.ValueOf(val)
 	vt := reflect.TypeOf(val)
 	if vt.AssignableTo(dt) {
@@ -173,12 +200,13 @@ func setValue(dest reflect.Value, val interface{}) error {
 		switch dest.Kind() {
 		case reflect.Struct:
 			return map2Struct(dest, v)
-		case reflect.Ptr:
-			if dest.Elem().Kind() == reflect.Struct {
-				return map2Struct(dest.Elem(), v)
-			}
 		case reflect.Map:
-			return map2Map(dest, v)
+			md := reflect.MakeMap(dt)
+			if err := map2Map(md, v); err != nil {
+				return err
+			}
+			dest.Set(md)
+			return nil
 		default:
 		}
 	case reflect.Slice:
@@ -260,16 +288,20 @@ func makeValue(t reflect.Type) reflect.Value {
 		if t.Elem().Kind() == reflect.Uint8 {
 			return reflect.Indirect(reflect.New(reflect.TypeOf("")))
 		}
-		fallthrough
+		return makeSlice(t.Elem())
+	case reflect.Array:
+		return makeArray(t.Elem(), t.Len())
 	case reflect.Bool,reflect.Int,reflect.Uint,
 			reflect.Int8,reflect.Int16,reflect.Int32,reflect.Int64,
 			reflect.Uint8,reflect.Uint16,reflect.Uint32,reflect.Uint64,
 			reflect.Float32,reflect.Float64,reflect.String,
-			reflect.Array/*,reflect.Map*/,reflect.Struct,
+			/*reflect.Array,*/reflect.Map,reflect.Struct,
 			reflect.Interface/*,reflect.Ptr*/,reflect.Func:
 		return reflect.Indirect(reflect.New(t))
+	/*
 	case reflect.Map:
 		return reflect.MakeMap(t)
+	*/
 	case reflect.Ptr:
 		el := makeValue(t.Elem())
 		ptr := reflect.Indirect(reflect.New(t))
@@ -278,6 +310,11 @@ func makeValue(t reflect.Type) reflect.Value {
 	default:
 		panic("unsupport type")
 	}
+}
+
+func makeArray(el reflect.Type, l int) reflect.Value {
+	t := reflect.ArrayOf(l, el)
+	return reflect.Indirect(reflect.New(t))
 }
 
 func makeSlice(el reflect.Type) reflect.Value {
