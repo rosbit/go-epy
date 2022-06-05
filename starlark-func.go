@@ -41,17 +41,24 @@ func (slw *XStarlark) wrapFunc(fn *starlark.Function, fnType reflect.Type) func(
 			if fnType.NumOut() > 0 {
 				if res.Type() == "tuple" {
 					mRes := fromValue(res).([]interface{})
-					l := len(mRes)
 					n := fnType.NumOut()
-					if n < l {
-						l = n
-					}
-					for i:=0; i<l; i++ {
-						// v := reflect.New(fnType.Out(i)).Elem()
-						v := makeValue(fnType.Out(i))
-						rv := mRes[i]
-						if err = setValue(v, rv); err == nil {
-							results[i] = v
+					if n == 1 && fnType.Out(0).Kind() == reflect.Slice {
+						v := makeValue(fnType.Out(0))
+						if err = setValue(v, mRes); err == nil {
+							results[0] = v
+						}
+					} else {
+						l := len(mRes)
+						if n < l {
+							l = n
+						}
+						for i:=0; i<l; i++ {
+							// v := reflect.New(fnType.Out(i)).Elem()
+							v := makeValue(fnType.Out(i))
+							rv := mRes[i]
+							if err = setValue(v, rv); err == nil {
+								results[i] = v
+							}
 						}
 					}
 				} else {
