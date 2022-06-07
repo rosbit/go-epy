@@ -1,6 +1,7 @@
 package epy
 
 import (
+	elutils "github.com/rosbit/go-embedding-utils"
 	"go.starlark.net/starlark"
 	"fmt"
 	"reflect"
@@ -20,7 +21,7 @@ func (i *userInterface) Attr(name string) (v starlark.Value, err error) {
 	mV := i.v.MethodByName(name)
 	if mV.Kind() != reflect.Invalid {
 		mT := mV.Type()
-		return starlark.NewBuiltin(name, wrapGoFunc(mV, mT)), nil
+		return starlark.NewBuiltin(name, wrapGoFunc(elutils.NewGolangFuncHelperDiretly(mV, mT))), nil
 	}
 	return starlark.None, nil
 }

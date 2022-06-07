@@ -1,6 +1,7 @@
 package epy
 
 import (
+	elutils "github.com/rosbit/go-embedding-utils"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/starlark"
 	"fmt"
@@ -20,7 +21,7 @@ func wrapModule(modName string, name2FuncVarPtr map[string]interface{}) (mod *st
 			return
 		}
 		fnT := fnV.Type()
-		methods[n] = starlark.NewBuiltin(n, wrapGoFunc(fnV, fnT))
+		methods[n] = starlark.NewBuiltin(n, wrapGoFunc(elutils.NewGolangFuncHelperDiretly(fnV, fnT)))
 	}
 
 	mod = &starlarkstruct.Module{

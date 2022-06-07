@@ -1,92 +1,35 @@
 package epy
 
 import (
+	elutils "github.com/rosbit/go-embedding-utils"
 	"go.starlark.net/starlark"
 	"reflect"
 )
 
-func (slw *XStarlark) bindFunc(fn *starlark.Function, funcVarPtr interface{}) {
-	dest := reflect.ValueOf(funcVarPtr).Elem()
-	fnType := dest.Type()
-	dest.Set(reflect.MakeFunc(fnType, slw.wrapFunc(fn, fnType)))
+func (slw *XStarlark) bindFunc(fn *starlark.Function, funcVarPtr interface{}) (err error) {
+	helper, e := elutils.NewEmbeddingFuncHelper(funcVarPtr)
+	if e != nil {
+		err = e
+		return
+	}
+	helper.BindEmbeddingFunc(slw.wrapFunc(fn, helper))
+	return
 }
 
-func (slw *XStarlark) wrapFunc(fn *starlark.Function, fnType reflect.Type) func(args []reflect.Value) (results []reflect.Value) {
+func (slw *XStarlark) wrapFunc(fn *starlark.Function, helper *elutils.EmbeddingFuncHelper) elutils.FnGoFunc {
 	return func(args []reflect.Value) (results []reflect.Value) {
-		// make starlark args
 		var slArgs []starlark.Value
-		lastNumIn := fnType.NumIn() - 1
-		variadic := fnType.IsVariadic()
-		for i, arg := range args {
-			if i < lastNumIn || !variadic {
-				slArgs = append(slArgs, toValue(arg.Interface()))
-				continue
-			}
 
-			if arg.IsZero() {
-				break
-			}
-			varLen := arg.Len()
-			for j:=0; j<varLen; j++ {
-				slArgs = append(slArgs, toValue(arg.Index(j).Interface()))
-			}
+		// make starlark args
+		itArgs := helper.MakeGoFuncArgs(args)
+		for arg := range itArgs {
+			slArgs = append(slArgs, toValue(arg))
 		}
 
 		// call starlark function
 		res, err := starlark.Call(slw.thread, fn, starlark.Tuple(slArgs), nil)
-
 		// convert result to golang
-		results = make([]reflect.Value, fnType.NumOut())
-		if err == nil {
-			if fnType.NumOut() > 0 {
-				if res.Type() == "tuple" {
-					mRes := fromValue(res).([]interface{})
-					n := fnType.NumOut()
-					if n == 1 && fnType.Out(0).Kind() == reflect.Slice {
-						v := makeValue(fnType.Out(0))
-						if err = setValue(v, mRes); err == nil {
-							results[0] = v
-						}
-					} else {
-						l := len(mRes)
-						if n < l {
-							l = n
-						}
-						for i:=0; i<l; i++ {
-							// v := reflect.New(fnType.Out(i)).Elem()
-							v := makeValue(fnType.Out(i))
-							rv := mRes[i]
-							if err = setValue(v, rv); err == nil {
-								results[i] = v
-							}
-						}
-					}
-				} else {
-					// v := reflect.New(fnType.Out(0)).Elem()
-					v := makeValue(fnType.Out(0))
-					rv := fromValue(res)
-					if err = setValue(v, rv); err == nil {
-						results[0] = v
-					}
-				}
-			}
-		}
-
-		if err != nil {
-			nOut := fnType.NumOut()
-			if nOut > 0 && fnType.Out(nOut-1).Name() == "error" {
-				results[nOut-1] = reflect.ValueOf(err).Convert(fnType.Out(nOut-1))
-			} else {
-				panic(err)
-			}
-		}
-
-		for i, v := range results {
-			if !v.IsValid() {
-				results[i] = reflect.Zero(fnType.Out(i))
-			}
-		}
-
+		results = helper.ToGolangResults(fromValue(res), res.Type() == "tuple", err)
 		return
 	}
 }

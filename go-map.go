@@ -1,6 +1,7 @@
 package epy
 
 import (
+	elutils "github.com/rosbit/go-embedding-utils"
 	"go.starlark.net/starlark"
 	"reflect"
 	"fmt"
@@ -30,13 +31,13 @@ func (m *userMap) SetKey(k, v starlark.Value) (err error) {
 	}
 
 	mT := m.v.Type()
-	key := makeValue(mT.Key())
-	if err = setValue(key, fromValue(k)); err != nil {
+	key := elutils.MakeValue(mT.Key())
+	if err = elutils.SetValue(key, fromValue(k)); err != nil {
 		return
 	}
 
-	val := makeValue(mT.Elem())
-	if err = setValue(val, fromValue(v)); err != nil {
+	val := elutils.MakeValue(mT.Elem())
+	if err = elutils.SetValue(val, fromValue(v)); err != nil {
 		return
 	}
 	m.v.SetMapIndex(key, val)
@@ -44,8 +45,8 @@ func (m *userMap) SetKey(k, v starlark.Value) (err error) {
 }
 
 func (m *userMap) Get(k starlark.Value) (v starlark.Value, found bool, err error) {
-	key := makeValue(m.v.Type().Key())
-	if err = setValue(key, fromValue(k)); err != nil {
+	key := elutils.MakeValue(m.v.Type().Key())
+	if err = elutils.SetValue(key, fromValue(k)); err != nil {
 		return
 	}
 	val := m.v.MapIndex(key)

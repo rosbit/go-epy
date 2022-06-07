@@ -1,6 +1,7 @@
 package epy
 
 import (
+	elutils "github.com/rosbit/go-embedding-utils"
 	"go.starlark.net/starlark"
 	"fmt"
 	"reflect"
@@ -48,7 +49,7 @@ func (l *userList) SetIndex(i int, v starlark.Value) (err error) {
 	if err = l.canModify(); err != nil {
 		return
 	}
-	return setValue(l.v.Index(i), fromValue(v))
+	return elutils.SetValue(l.v.Index(i), fromValue(v))
 }
 
 func (l *userList) Slice(start, end, step int) starlark.Value {
@@ -84,8 +85,8 @@ func (l *userList) append(v interface{}) (err error) {
 	if err = l.canModify(); err != nil {
 		return
 	}
-	val := makeValue(l.v.Type().Elem())
-	if err = setValue(val, v); err != nil {
+	val := elutils.MakeValue(l.v.Type().Elem())
+	if err = elutils.SetValue(val, v); err != nil {
 		return
 	}
 	l.v = reflect.Append(l.v, val)
