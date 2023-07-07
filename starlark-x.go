@@ -1,6 +1,7 @@
 package epy
 
 import (
+	elutils "github.com/rosbit/go-embedding-utils"
 	"go.starlark.net/starlark"
 	"go.starlark.net/lib/json"
 	"go.starlark.net/lib/math"
@@ -180,6 +181,16 @@ func convertMap(vars map[string]interface{}) (starlark.StringDict) {
 	}
 	res := make(starlark.StringDict)
 	for k, v := range vars {
+		if v == nil {
+			res[k] = starlark.None
+			continue
+		}
+		v2 := reflect.ValueOf(v)
+		if v2.Kind() == reflect.Func {
+			fnT := v2.Type()
+			res[k] = starlark.NewBuiltin(k, wrapGoFunc(elutils.NewGolangFuncHelperDiretly(v2, fnT)))
+			continue
+		}
 		res[k] = toValue(v)
 	}
 	return res
