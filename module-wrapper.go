@@ -21,7 +21,7 @@ func wrapModule(modName string, name2FuncVarPtr map[string]interface{}) (mod *st
 			return
 		}
 		fnT := fnV.Type()
-		methods[n] = starlark.NewBuiltin(n, wrapGoFunc(elutils.NewGolangFuncHelperDiretly(fnV, fnT)))
+		methods[n] = starlark.NewBuiltin(n, wrapGoFunc(elutils.NewGolangFuncHelperDirectly(fnV, fnT)))
 	}
 
 	mod = &starlarkstruct.Module{

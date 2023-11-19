@@ -28,12 +28,12 @@ func (m *userModule) Attr(name string) (starlark.Value, error) {
 	mV := m.structVar.MethodByName(name)
 	if mV.Kind() != reflect.Invalid {
 		mT := mV.Type()
-		return starlark.NewBuiltin(name, wrapGoFunc(elutils.NewGolangFuncHelperDiretly(mV, mT))), nil
+		return starlark.NewBuiltin(name, wrapGoFunc(elutils.NewGolangFuncHelperDirectly(mV, mT))), nil
 	}
 	mV = m.structE.MethodByName(name)
 	if mV.Kind() != reflect.Invalid {
 		mT := mV.Type()
-		return starlark.NewBuiltin(name, wrapGoFunc(elutils.NewGolangFuncHelperDiretly(mV, mT))), nil
+		return starlark.NewBuiltin(name, wrapGoFunc(elutils.NewGolangFuncHelperDirectly(mV, mT))), nil
 	}
 	if _, ok := m.structT.FieldByName(name); !ok {
 		return starlark.None, nil

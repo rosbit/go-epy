@@ -188,7 +188,7 @@ func convertMap(vars map[string]interface{}) (starlark.StringDict) {
 		v2 := reflect.ValueOf(v)
 		if v2.Kind() == reflect.Func {
 			fnT := v2.Type()
-			res[k] = starlark.NewBuiltin(k, wrapGoFunc(elutils.NewGolangFuncHelperDiretly(v2, fnT)))
+			res[k] = starlark.NewBuiltin(k, wrapGoFunc(elutils.NewGolangFuncHelperDirectly(v2, fnT)))
 			continue
 		}
 		res[k] = toValue(v)

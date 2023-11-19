@@ -21,7 +21,7 @@ func (i *userInterface) Attr(name string) (v starlark.Value, err error) {
 	mV := i.v.MethodByName(name)
 	if mV.Kind() != reflect.Invalid {
 		mT := mV.Type()
-		return starlark.NewBuiltin(name, wrapGoFunc(elutils.NewGolangFuncHelperDiretly(mV, mT))), nil
+		return starlark.NewBuiltin(name, wrapGoFunc(elutils.NewGolangFuncHelperDirectly(mV, mT))), nil
 	}
 	return starlark.None, nil
 }

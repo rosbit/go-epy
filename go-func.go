@@ -6,7 +6,7 @@ import (
 )
 
 func bindGoFunc(name string, funcVar interface{}) (goFunc *starlark.Builtin, err error) {
-	helper, e := elutils.NewGolangFuncHelper(name, funcVar)
+	helper, e := elutils.NewGolangFuncHelper(funcVar, name)
 	if e != nil {
 		err = e
 		return
