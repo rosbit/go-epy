@@ -24,7 +24,7 @@ func InitPyCache() {
 	pyCtxCache = make(map[string]*pyCtx)
 }
 
-func LoadFileFromCache(path string, vars map[string]interface{}) (ctx *XStarlark, err error) {
+func LoadFileFromCache(path string, vars map[string]interface{}) (ctx *XStarlark, existing bool, err error) {
 	lock.Lock()
 	defer lock.Unlock()
 
@@ -50,12 +50,16 @@ func LoadFileFromCache(path string, vars map[string]interface{}) (ctx *XStarlark
 		return
 	}
 	mt := fi.ModTime()
-	if pyC.mt.Before(mt) {
-		if err = pyC.slx.LoadFile(path, vars); err != nil {
+	if !pyC.mt.Equal(mt) {
+		ctx = New()
+		if err = ctx.LoadFile(path, vars); err != nil {
 			return
 		}
+		pyC.slx = ctx
 		pyC.mt = mt
+	} else {
+		existing = true
+		ctx = pyC.slx
 	}
-	ctx = pyC.slx
 	return
 }
